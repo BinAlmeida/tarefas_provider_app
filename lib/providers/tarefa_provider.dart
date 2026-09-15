@@ -22,18 +22,53 @@ class TarefaProvider extends ChangeNotifier {
   Future<void> adicionarTarefa(String titulo) async {
     if (titulo.trim().isEmpty) return;
 
-    final novaTarefa = Tarefa(titulo: titulo.trim());
+    final novaTarefa = Tarefa(
+      titulo: titulo.trim(),
+    );
+
     final id = await DatabaseHelper.instance.insert(novaTarefa);
 
-    _tarefas.insert(0, novaTarefa.copyWith(id: id));
+    _tarefas.insert(
+      0,
+      novaTarefa.copyWith(id: id),
+    );
+
     notifyListeners();
   }
 
   Future<void> alternarStatus(Tarefa tarefa) async {
-    final tarefaAtualizada = tarefa.copyWith(concluida: !tarefa.concluida);
+    final tarefaAtualizada = tarefa.copyWith(
+      concluida: !tarefa.concluida,
+    );
+
     await DatabaseHelper.instance.update(tarefaAtualizada);
 
-    final index = _tarefas.indexWhere((t) => t.id == tarefa.id);
+    final index = _tarefas.indexWhere(
+      (t) => t.id == tarefa.id,
+    );
+
+    if (index != -1) {
+      _tarefas[index] = tarefaAtualizada;
+      notifyListeners();
+    }
+  }
+
+  Future<void> editarTarefa(
+    Tarefa tarefa,
+    String novoTitulo,
+  ) async {
+    if (novoTitulo.trim().isEmpty) return;
+
+    final tarefaAtualizada = tarefa.copyWith(
+      titulo: novoTitulo.trim(),
+    );
+
+    await DatabaseHelper.instance.update(tarefaAtualizada);
+
+    final index = _tarefas.indexWhere(
+      (t) => t.id == tarefa.id,
+    );
+
     if (index != -1) {
       _tarefas[index] = tarefaAtualizada;
       notifyListeners();
@@ -42,7 +77,11 @@ class TarefaProvider extends ChangeNotifier {
 
   Future<void> removerTarefa(int id) async {
     await DatabaseHelper.instance.delete(id);
-    _tarefas.removeWhere((t) => t.id == id);
+
+    _tarefas.removeWhere(
+      (t) => t.id == id,
+    );
+
     notifyListeners();
   }
 }

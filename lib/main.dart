@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'providers/tarefa_provider.dart';
+import 'models/tarefa.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,11 +86,59 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _exibirDialogEditarTarefa(
+    BuildContext context,
+    Tarefa tarefa,
+  ) {
+    final controller = TextEditingController(
+      text: tarefa.titulo,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Editar Tarefa'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Descrição da tarefa',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Provider.of<TarefaProvider>(
+                  context,
+                  listen: false,
+                ).editarTarefa(
+                  tarefa,
+                  controller.text,
+                );
+
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Minhas Tarefas (SQLite + Provider)'),
+        title: const Text(
+          'Minhas Tarefas (SQLite + Provider)',
+        ),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         centerTitle: true,
@@ -112,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
               .where((tarefa) => !tarefa.concluida)
               .length;
 
-          List tarefasFiltradas;
+          List<Tarefa> tarefasFiltradas;
 
           if (_filtroSelecionado == 1) {
             tarefasFiltradas = provider.tarefas
@@ -124,6 +173,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 .toList();
           } else {
             tarefasFiltradas = provider.tarefas;
+          }
+
+          if (provider.tarefas.isEmpty) {
+            return const Center(
+              child: Text(
+                'Nenhuma tarefa cadastrada ainda!',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
+            );
           }
 
           return Column(
@@ -143,7 +204,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -154,17 +217,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _filtroSelecionado == 0
-                              ? Colors.indigo
-                              : Colors.grey.shade300,
-                          foregroundColor: _filtroSelecionado == 0
-                              ? Colors.white
-                              : Colors.black,
+                          backgroundColor:
+                              _filtroSelecionado == 0
+                                  ? Colors.indigo
+                                  : Colors.grey.shade300,
+                          foregroundColor:
+                              _filtroSelecionado == 0
+                                  ? Colors.white
+                                  : Colors.black,
                         ),
-                        child: Text('Todas ($totalTarefas)'),
+                        child: Text(
+                          'Todas ($totalTarefas)',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
+
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -173,17 +241,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _filtroSelecionado == 1
-                              ? Colors.indigo
-                              : Colors.grey.shade300,
-                          foregroundColor: _filtroSelecionado == 1
-                              ? Colors.white
-                              : Colors.black,
+                          backgroundColor:
+                              _filtroSelecionado == 1
+                                  ? Colors.indigo
+                                  : Colors.grey.shade300,
+                          foregroundColor:
+                              _filtroSelecionado == 1
+                                  ? Colors.white
+                                  : Colors.black,
                         ),
-                        child: Text('Pendentes ($tarefasPendentes)'),
+                        child: Text(
+                          'Pendentes ($tarefasPendentes)',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
+
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
@@ -192,14 +265,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           });
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _filtroSelecionado == 2
-                              ? Colors.indigo
-                              : Colors.grey.shade300,
-                          foregroundColor: _filtroSelecionado == 2
-                              ? Colors.white
-                              : Colors.black,
+                          backgroundColor:
+                              _filtroSelecionado == 2
+                                  ? Colors.indigo
+                                  : Colors.grey.shade300,
+                          foregroundColor:
+                              _filtroSelecionado == 2
+                                  ? Colors.white
+                                  : Colors.black,
                         ),
-                        child: Text('Concluídas ($tarefasConcluidas)'),
+                        child: Text(
+                          'Concluídas ($tarefasConcluidas)',
+                        ),
                       ),
                     ),
                   ],
@@ -233,10 +310,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 6,
                         ),
                         child: ListTile(
+                          onLongPress: () {
+                            _exibirDialogEditarTarefa(
+                              context,
+                              tarefa,
+                            );
+                          },
                           leading: Checkbox(
                             value: tarefa.concluida,
                             onChanged: (_) {
-                              provider.alternarStatus(tarefa);
+                              provider.alternarStatus(
+                                tarefa,
+                              );
                             },
                           ),
                           title: Text(
@@ -256,7 +341,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.red,
                             ),
                             onPressed: () {
-                              provider.removerTarefa(tarefa.id!);
+                              provider.removerTarefa(
+                                tarefa.id!,
+                              );
                             },
                           ),
                         ),
