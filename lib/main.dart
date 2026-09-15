@@ -37,8 +37,15 @@ class TarefasApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _filtroSelecionado = 0;
 
   void _exibirDialogNovaTarefa(BuildContext context) {
     final controller = TextEditingController();
@@ -95,25 +102,29 @@ class HomeScreen extends StatelessWidget {
             );
           }
 
-          if (provider.tarefas.isEmpty) {
-            return const Center(
-              child: Text(
-                'Nenhuma tarefa cadastrada ainda!',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-            );
-          }
-
-          // Quantidade total de tarefas
           final totalTarefas = provider.tarefas.length;
 
-          // Quantidade de tarefas concluídas
           final tarefasConcluidas = provider.tarefas
               .where((tarefa) => tarefa.concluida)
               .length;
+
+          final tarefasPendentes = provider.tarefas
+              .where((tarefa) => !tarefa.concluida)
+              .length;
+
+          List tarefasFiltradas;
+
+          if (_filtroSelecionado == 1) {
+            tarefasFiltradas = provider.tarefas
+                .where((tarefa) => !tarefa.concluida)
+                .toList();
+          } else if (_filtroSelecionado == 2) {
+            tarefasFiltradas = provider.tarefas
+                .where((tarefa) => tarefa.concluida)
+                .toList();
+          } else {
+            tarefasFiltradas = provider.tarefas;
+          }
 
           return Column(
             children: [
@@ -131,49 +142,128 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              Expanded(
-                child: ListView.builder(
-                  itemCount: provider.tarefas.length,
-                  itemBuilder: (ctx, index) {
-                    final tarefa = provider.tarefas[index];
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _filtroSelecionado = 0;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _filtroSelecionado == 0
+                              ? Colors.indigo
+                              : Colors.grey.shade300,
+                          foregroundColor: _filtroSelecionado == 0
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                        child: Text('Todas ($totalTarefas)'),
                       ),
-                      child: ListTile(
-                        leading: Checkbox(
-                          value: tarefa.concluida,
-                          onChanged: (_) {
-                            provider.alternarStatus(tarefa);
-                          },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _filtroSelecionado = 1;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _filtroSelecionado == 1
+                              ? Colors.indigo
+                              : Colors.grey.shade300,
+                          foregroundColor: _filtroSelecionado == 1
+                              ? Colors.white
+                              : Colors.black,
                         ),
-                        title: Text(
-                          tarefa.titulo,
-                          style: TextStyle(
-                            decoration: tarefa.concluida
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                            color: tarefa.concluida
-                                ? Colors.grey
-                                : Colors.black,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
-                          onPressed: () {
-                            provider.removerTarefa(tarefa.id!);
-                          },
-                        ),
+                        child: Text('Pendentes ($tarefasPendentes)'),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _filtroSelecionado = 2;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _filtroSelecionado == 2
+                              ? Colors.indigo
+                              : Colors.grey.shade300,
+                          foregroundColor: _filtroSelecionado == 2
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                        child: Text('Concluídas ($tarefasConcluidas)'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
+              const SizedBox(height: 8),
+
+              if (tarefasFiltradas.isEmpty)
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'Nenhuma tarefa encontrada neste filtro!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: tarefasFiltradas.length,
+                    itemBuilder: (ctx, index) {
+                      final tarefa = tarefasFiltradas[index];
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: tarefa.concluida,
+                            onChanged: (_) {
+                              provider.alternarStatus(tarefa);
+                            },
+                          ),
+                          title: Text(
+                            tarefa.titulo,
+                            style: TextStyle(
+                              decoration: tarefa.concluida
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                              color: tarefa.concluida
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.red,
+                            ),
+                            onPressed: () {
+                              provider.removerTarefa(tarefa.id!);
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
             ],
           );
         },
