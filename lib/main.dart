@@ -63,8 +63,11 @@ class HomeScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               if (controller.text.trim().isNotEmpty) {
-                Provider.of<TarefaProvider>(context, listen: false)
-                    .adicionarTarefa(controller.text);
+                Provider.of<TarefaProvider>(
+                  context,
+                  listen: false,
+                ).adicionarTarefa(controller.text);
+
                 Navigator.pop(ctx);
               }
             },
@@ -87,56 +90,101 @@ class HomeScreen extends StatelessWidget {
       body: Consumer<TarefaProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (provider.tarefas.isEmpty) {
             return const Center(
               child: Text(
                 'Nenhuma tarefa cadastrada ainda!',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
               ),
             );
           }
 
-          return ListView.builder(
-            itemCount: provider.tarefas.length,
-            itemBuilder: (ctx, index) {
-              final tarefa = provider.tarefas[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: ListTile(
-                  leading: Checkbox(
-                    value: tarefa.concluida,
-                    onChanged: (_) {
-                      provider.alternarStatus(tarefa);
-                    },
-                  ),
-                  title: Text(
-                    tarefa.titulo,
-                    style: TextStyle(
-                      decoration: tarefa.concluida
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      color: tarefa.concluida ? Colors.grey : Colors.black,
+          // Quantidade total de tarefas
+          final totalTarefas = provider.tarefas.length;
+
+          // Quantidade de tarefas concluídas
+          final tarefasConcluidas = provider.tarefas
+              .where((tarefa) => tarefa.concluida)
+              .length;
+
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$tarefasConcluidas de $totalTarefas concluídas',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      provider.removerTarefa(tarefa.id!);
-                    },
-                  ),
                 ),
-              );
-            },
+              ),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: provider.tarefas.length,
+                  itemBuilder: (ctx, index) {
+                    final tarefa = provider.tarefas[index];
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: ListTile(
+                        leading: Checkbox(
+                          value: tarefa.concluida,
+                          onChanged: (_) {
+                            provider.alternarStatus(tarefa);
+                          },
+                        ),
+                        title: Text(
+                          tarefa.titulo,
+                          style: TextStyle(
+                            decoration: tarefa.concluida
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                            color: tarefa.concluida
+                                ? Colors.grey
+                                : Colors.black,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            provider.removerTarefa(tarefa.id!);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _exibirDialogNovaTarefa(context),
         backgroundColor: Colors.indigo,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
       ),
     );
   }
